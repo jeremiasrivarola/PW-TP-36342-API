@@ -1,0 +1,33 @@
+{
+  "name": "pw-tp-36342-api",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/jeremiasrivarola/PW-TP-36342-API#readme",
+  "bugs": {
+    "url": "https://github.com/jeremiasrivarola/PW-TP-36342-API/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeremiasrivarola/PW-TP-36342-API.git"
+  },
+  "license": "ISC",
+  "author": "Jeremias Rivarola",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "morgan": "^1.10.1",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^7.8.0"
+  }
+}
