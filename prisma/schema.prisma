@@ -1,13 +1,46 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+
+  books     Book[]
+
+  createdAt DateTime @default(now())
+}
+
+model Book {
+  id          Int      @id @default(autoincrement())
+
+  title       String
+  author      String
+  genre       String
+  year        Int?
+
+  description String?
+  coverUrl    String?
+
+  rating      Int?
+  personalNote String?
+
+  status      ReadingStatus
+
+  userId      Int
+  user        User @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+enum ReadingStatus {
+  READ
+  READING
+  TO_READ
 }
