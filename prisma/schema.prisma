@@ -6,6 +6,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
@@ -18,29 +19,50 @@ model User {
 }
 
 model Book {
-  id          Int      @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
 
-  title       String
-  author      String
-  genre       String
-  year        Int?
+  title        String
+  author       String
 
-  description String?
-  coverUrl    String?
+  genre        Genre
+  year         Int?
 
-  rating      Int?
+  description  String?
+  coverUrl     String?
+
+  rating       Int?
   personalNote String?
 
-  status      ReadingStatus
+  status       ReadingStatus
 
-  userId      Int
-  user        User @relation(fields: [userId], references: [id])
+  userId       Int
+  user         User @relation(fields: [userId], references: [id])
 
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 }
 
 enum ReadingStatus {
   READ
   READING
   TO_READ
+}
+
+enum Genre {
+  ACTION
+  ADVENTURE
+  BIOGRAPHY
+  COMEDY
+  DRAMA
+  FANTASY
+  FICTION
+  HISTORY
+  HORROR
+  MYSTERY
+  POETRY
+  ROMANCE
+  SCIENCE
+  SCIENCE_FICTION
+  SUSPENSE
+  TECHNOLOGY
+  THRILLER
 }

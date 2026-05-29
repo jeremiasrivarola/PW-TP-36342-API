@@ -17,10 +17,10 @@ exports.register = async ({ username, email, password }) => {
 exports.login = async ({ email, password }) => {
   const user = await prisma.user.findUnique({ where: { email } })
 
-  if (!user) throw new Error('User not found')
+  if (!user) throw new Error('Usuario nao encontrado')
 
   const valid = await bcrypt.compare(password, user.password)
-  if (!valid) throw new Error('Wrong password')
+  if (!valid) throw new Error('Palavra-Passe errada')
 
   const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: '7d' })
 
