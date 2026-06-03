@@ -2,7 +2,7 @@ const prisma = require('../config/prisma')
 
 const validStatuses = ['READ', 'READING', 'TO_READ']
 
-exports.createBook = async (data, userId) => {
+exports.createBook = async (data, userId, file) => {
   const {
     title,
     author,
@@ -27,6 +27,12 @@ exports.createBook = async (data, userId) => {
     throw new Error('rating must be between 1 and 5')
   }
 
+  let finalCoverUrl = coverUrl || null
+
+  if (file) {
+    finalCoverUrl = `/uploads/covers/${file.filename}`
+  }
+
   return prisma.book.create({
     data: {
       title,
@@ -34,7 +40,7 @@ exports.createBook = async (data, userId) => {
       genre,
       year: year !== undefined && year !== null ? Number(year) : null,
       description,
-      coverUrl,
+      coverUrl: finalCoverUrl,
       rating: rating !== undefined && rating !== null ? Number(rating) : null,
       personalNote,
       status,
@@ -78,7 +84,7 @@ exports.getBookById = async (id, userId) => {
   return book
 }
 
-exports.updateBook = async (id, data, userId) => {
+exports.updateBook = async (id, data, userId, file) => {
   const existing = await prisma.book.findFirst({
     where: {
       id: Number(id),
@@ -102,10 +108,15 @@ exports.updateBook = async (id, data, userId) => {
     ...(data.genre !== undefined && { genre: data.genre }),
     ...(data.year !== undefined && { year: data.year === null ? null : Number(data.year) }),
     ...(data.description !== undefined && { description: data.description }),
-    ...(data.coverUrl !== undefined && { coverUrl: data.coverUrl }),
     ...(data.rating !== undefined && { rating: data.rating === null ? null : Number(data.rating) }),
     ...(data.personalNote !== undefined && { personalNote: data.personalNote }),
     ...(data.status !== undefined && { status: data.status })
+  }
+
+  if (file) {
+    updatedData.coverUrl = `/uploads/covers/${file.filename}`
+  } else if (data.coverUrl !== undefined) {
+    updatedData.coverUrl = data.coverUrl
   }
 
   return prisma.book.update({

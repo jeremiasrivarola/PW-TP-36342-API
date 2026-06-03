@@ -2,7 +2,7 @@ const bookService = require('../services/book.service')
 
 exports.createBook = async (req, res) => {
   try {
-    const result = await bookService.createBook(req.body, req.user.id)
+    const result = await bookService.createBook(req.body, req.user.id, req.file)
     res.status(201).json(result)
   } catch (err) {
     res.status(400).json({ error: err.message })
@@ -29,7 +29,7 @@ exports.getBookById = async (req, res) => {
 
 exports.updateBook = async (req, res) => {
   try {
-    const result = await bookService.updateBook(req.params.id, req.body, req.user.id)
+    const result = await bookService.updateBook(req.params.id, req.body, req.user.id, req.file)
     res.json(result)
   } catch (err) {
     res.status(400).json({ error: err.message })
@@ -42,5 +42,17 @@ exports.deleteBook = async (req, res) => {
     res.json(result)
   } catch (err) {
     res.status(404).json({ error: err.message })
+  }
+}
+
+exports.createBook = async (req, res) => {
+  try {
+    console.log('BODY:', req.body)
+    console.log('FILE:', req.file)
+
+    const result = await bookService.createBook(req.body, req.user.id, req.file)
+    res.status(201).json(result)
+  } catch (err) {
+    res.status(400).json({ error: err.message })
   }
 }
