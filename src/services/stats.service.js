@@ -31,7 +31,7 @@ exports.getStats = async (userId) => {
     : null
 
   const avgRating = await prisma.book.aggregate({
-    where: { ...where, rating: { not: null } },
+    where: { ...where, rating: { gt: 0 } },
     _avg: { rating: true }
   })
 

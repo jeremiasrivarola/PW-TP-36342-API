@@ -1,4 +1,6 @@
 const prisma = require('../config/prisma')
+const fs = require('fs')
+const path = require('path')
 
 const validStatuses = ['READ', 'READING', 'TO_READ']
 
@@ -23,8 +25,31 @@ exports.createBook = async (data, userId, file) => {
     throw new Error('Invalid status')
   }
 
-  if (rating !== undefined && rating !== null && (Number(rating) < 1 || Number(rating) > 5)) {
-    throw new Error('rating must be between 1 and 5')
+  let normalizedRating = null
+
+  if (status === 'READ') {
+    if (
+      rating === undefined ||
+      rating === null ||
+      rating === '' ||
+      Number(rating) < 1 ||
+      Number(rating) > 5
+    ) {
+      throw new Error('rating must be between 1 and 5 when status is READ')
+    }
+    normalizedRating = Number(rating)
+  } else {
+    if (rating !== undefined && rating !== null && rating !== '') {
+      const numericRating = Number(rating)
+
+      if (numericRating < 0 || numericRating > 5) {
+        throw new Error('rating must be between 0 and 5')
+      }
+
+      normalizedRating = numericRating
+    } else {
+      normalizedRating = 0
+    }
   }
 
   let finalCoverUrl = coverUrl || null
@@ -38,10 +63,10 @@ exports.createBook = async (data, userId, file) => {
       title,
       author,
       genre,
-      year: year !== undefined && year !== null ? Number(year) : null,
+      year: year !== undefined && year !== null && year !== '' ? Number(year) : null,
       description,
       coverUrl: finalCoverUrl,
-      rating: rating !== undefined && rating !== null ? Number(rating) : null,
+      rating: normalizedRating,
       personalNote,
       status,
       userId: Number(userId)
@@ -94,23 +119,55 @@ exports.updateBook = async (id, data, userId, file) => {
 
   if (!existing) throw new Error('Book not found or not authorized')
 
-  if (data.status !== undefined && !validStatuses.includes(data.status)) {
+  const nextStatus = data.status !== undefined ? data.status : existing.status
+
+  if (!validStatuses.includes(nextStatus)) {
     throw new Error('Invalid status')
   }
 
-  if (data.rating !== undefined && data.rating !== null && (Number(data.rating) < 1 || Number(data.rating) > 5)) {
-    throw new Error('rating must be between 1 and 5')
+  const rawRating = data.rating !== undefined ? data.rating : existing.rating
+  let normalizedRating = existing.rating
+
+  if (nextStatus === 'READ') {
+    if (
+      rawRating === undefined ||
+      rawRating === null ||
+      rawRating === '' ||
+      Number(rawRating) < 1 ||
+      Number(rawRating) > 5
+    ) {
+      throw new Error('rating must be between 1 and 5 when status is READ')
+    }
+    normalizedRating = Number(rawRating)
+  } else {
+    if (data.rating !== undefined) {
+      if (data.rating === null || data.rating === '') {
+        normalizedRating = 0
+      } else {
+        const numericRating = Number(data.rating)
+
+        if (numericRating < 0 || numericRating > 5) {
+          throw new Error('rating must be between 0 and 5')
+        }
+
+        normalizedRating = numericRating
+      }
+    } else if (existing.status === 'READ' && nextStatus !== 'READ') {
+      normalizedRating = 0
+    }
   }
 
   const updatedData = {
     ...(data.title !== undefined && { title: data.title }),
     ...(data.author !== undefined && { author: data.author }),
     ...(data.genre !== undefined && { genre: data.genre }),
-    ...(data.year !== undefined && { year: data.year === null ? null : Number(data.year) }),
+    ...(data.year !== undefined && {
+      year: data.year === null || data.year === '' ? null : Number(data.year)
+    }),
     ...(data.description !== undefined && { description: data.description }),
-    ...(data.rating !== undefined && { rating: data.rating === null ? null : Number(data.rating) }),
     ...(data.personalNote !== undefined && { personalNote: data.personalNote }),
-    ...(data.status !== undefined && { status: data.status })
+    ...(data.status !== undefined && { status: data.status }),
+    rating: normalizedRating
   }
 
   if (file) {
@@ -134,6 +191,18 @@ exports.deleteBook = async (id, userId) => {
   })
 
   if (!existing) throw new Error('Book not found or not authorized')
+
+  if (
+    existing.coverUrl &&
+    existing.coverUrl.startsWith('/uploads/covers/')
+  ) {
+    const relativeFilePath = existing.coverUrl.replace(/^\/+/, '')
+    const absoluteFilePath = path.join(process.cwd(), relativeFilePath)
+
+    if (fs.existsSync(absoluteFilePath)) {
+      fs.unlinkSync(absoluteFilePath)
+    }
+  }
 
   return prisma.book.delete({
     where: { id: Number(id) }
