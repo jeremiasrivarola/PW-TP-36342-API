@@ -15,7 +15,6 @@
   "type": "commonjs",
   "main": "src/server.js",
 "scripts": {
-  "postinstall": "prisma generate",
   "start": "node src/server.js",
   "dev": "nodemon src/server.js"
 },
