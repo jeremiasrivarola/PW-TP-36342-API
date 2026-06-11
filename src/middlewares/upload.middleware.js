@@ -1,20 +1,29 @@
 const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
+const cloudinary = require('cloudinary').v2
 
-const uploadDir = path.join(__dirname, '..', 'uploads', 'covers')
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const allowedFormats = ['png', 'jpg', 'jpeg']
+    const ext = file.originalname.split('.').pop().toLowerCase()
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir)
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    cb(null, uniqueSuffix + path.extname(file.originalname))
+    if (!allowedFormats.includes(ext)) {
+      throw new Error('Só são permitidos ficheiros PNG, JPG e JPEG')
+    }
+
+    return {
+      folder: 'covers',
+      allowed_formats: allowedFormats,
+      resource_type: 'image',
+      public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+    }
   },
 })
 

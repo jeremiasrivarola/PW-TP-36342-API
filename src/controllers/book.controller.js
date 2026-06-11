@@ -1,25 +1,10 @@
-const fs = require('fs')
-const path = require('path')
 const bookService = require('../services/book.service')
-
-function deleteUploadedFile(file) {
-  if (!file) return
-
-  const filePath = path.resolve(file.path)
-
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      console.error('Error deleting uploaded file:', err.message)
-    }
-  })
-}
 
 exports.createBook = async (req, res) => {
   try {
     const result = await bookService.createBook(req.body, req.user.id, req.file)
     res.status(201).json(result)
   } catch (err) {
-    deleteUploadedFile(req.file)
     res.status(400).json({ error: err.message })
   }
 }
@@ -47,7 +32,6 @@ exports.updateBook = async (req, res) => {
     const result = await bookService.updateBook(req.params.id, req.body, req.user.id, req.file)
     res.json(result)
   } catch (err) {
-    deleteUploadedFile(req.file)
     res.status(400).json({ error: err.message })
   }
 }

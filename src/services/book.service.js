@@ -1,8 +1,23 @@
 const prisma = require('../config/prisma')
-const fs = require('fs')
-const path = require('path')
+const cloudinary = require('cloudinary').v2
 
 const validStatuses = ['READ', 'READING', 'TO_READ']
+
+async function deleteCloudinaryImageByUrl(url) {
+  if (!url || !url.includes('res.cloudinary.com')) return
+
+  const parts = url.split('/')
+  const uploadIndex = parts.findIndex(part => part === 'upload')
+
+  if (uploadIndex === -1) return
+
+  const publicIdWithExtension = parts.slice(uploadIndex + 2).join('/')
+  const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, '')
+
+  if (!publicId) return
+
+  await cloudinary.uploader.destroy(publicId)
+}
 
 exports.createBook = async (data, userId, file) => {
   const {
@@ -55,7 +70,7 @@ exports.createBook = async (data, userId, file) => {
   let finalCoverUrl = coverUrl || null
 
   if (file) {
-    finalCoverUrl = `/uploads/covers/${file.filename}`
+    finalCoverUrl = file.path
   }
 
   return prisma.book.create({
@@ -171,7 +186,11 @@ exports.updateBook = async (id, data, userId, file) => {
   }
 
   if (file) {
-    updatedData.coverUrl = `/uploads/covers/${file.filename}`
+    if (existing.coverUrl && existing.coverUrl.includes('res.cloudinary.com')) {
+      await deleteCloudinaryImageByUrl(existing.coverUrl)
+    }
+
+    updatedData.coverUrl = file.path
   } else if (data.coverUrl !== undefined) {
     updatedData.coverUrl = data.coverUrl
   }
@@ -192,16 +211,8 @@ exports.deleteBook = async (id, userId) => {
 
   if (!existing) throw new Error('Book not found or not authorized')
 
-  if (
-    existing.coverUrl &&
-    existing.coverUrl.startsWith('/uploads/covers/')
-  ) {
-    const relativeFilePath = existing.coverUrl.replace(/^\/+/, '')
-    const absoluteFilePath = path.join(process.cwd(), relativeFilePath)
-
-    if (fs.existsSync(absoluteFilePath)) {
-      fs.unlinkSync(absoluteFilePath)
-    }
+  if (existing.coverUrl && existing.coverUrl.includes('res.cloudinary.com')) {
+    await deleteCloudinaryImageByUrl(existing.coverUrl)
   }
 
   return prisma.book.delete({
